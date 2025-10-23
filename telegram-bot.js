@@ -485,7 +485,7 @@ async function handleAddUserWithPurchase(chatId, userId) {
                 `❌ Недостаточно средств на балансе PROXY6!\n\n` +
                 `💰 Текущий баланс: ${balanceCheck.balance} ${balanceCheck.currency}\n` +
                 `💸 Необходимо: ${priceCheck.price} ${priceCheck.currency}\n` +
-                `📊 Цена за 30 shared прокси на 7 дней`
+                `📊 Цена за 25 shared прокси на 7 дней`
             );
             return;
         }
@@ -501,7 +501,7 @@ async function handleAddUserWithPurchase(chatId, userId) {
             `✅ Готов к покупке прокси!\n\n` +
             `💰 Баланс PROXY6: ${balanceCheck.balance} ${balanceCheck.currency}\n` +
             `💸 Стоимость: ${priceCheck.price} ${priceCheck.currency}\n` +
-            `📦 Количество: 30 shared прокси на 7 дней\n\n` +
+            `📦 Количество: 25 shared прокси на 7 дней\n\n` +
             `👤 Введите логин для нового клиента:`
         );
 
@@ -702,7 +702,7 @@ bot.on('message', async (msg) => {
             
             if (priceResult.success) {
                 const canBuy = Math.floor(parseFloat(balanceResult.balance) / priceResult.price);
-                message += `\n📊 Стоимость 30 shared прокси на 7 дней: ${priceResult.price} ${balanceResult.currency}\n` +
+                message += `\n📊 Стоимость 25 shared прокси на 7 дней: ${priceResult.price} ${balanceResult.currency}\n` +
                           `🛒 Можно купить: ${canBuy} таких заказов`;
             }
             
@@ -1034,7 +1034,7 @@ bot.on('message', async (msg) => {
                         `📋 Подтверждение создания клиента:\n\n` +
                         `👤 Логин: ${state.username}\n` +
                         `🔐 Пароль: ${state.password}\n` +
-                        `📦 Прокси: 30 shared на 7 дней\n` +
+                        `📦 Прокси: 25 shared на 7 дней\n` +
                         `💸 Стоимость: будет списана с баланса PROXY6\n\n` +
                         `❓ Подтвердить создание и покупку прокси?`,
                         keyboard
