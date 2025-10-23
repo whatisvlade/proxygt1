@@ -516,7 +516,7 @@ async function createUserWithProxyPurchase(userData) {
     try {
         // 1. Сначала покупаем прокси
         const purchaseResult = await buyProxy6(
-            30, // количество
+            25, // количество
             7, // период в днях
             'ru', // страна
             3, // IPv4 Shared
