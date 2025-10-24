@@ -37,7 +37,7 @@ const PROXY6_CONFIG = {
 // Единые настройки покупки прокси (по умолчанию: 20 штук на 7 дней, RU, IPv4 shared)
 const PURCHASE_DEFAULTS = {
     count: parseInt(process.env.PROXY_BUY_COUNT || '20', 10),
-    period: parseInt(process.env.PROXY_BUY_PERIOD || '7', 10),
+    period: parseInt(process.env.PROXY_BUY_PERIOD || '14', 10),
     country: process.env.PROXY_BUY_COUNTRY || 'ru',
     version: parseInt(process.env.PROXY_BUY_VERSION || '3', 10)
 };
@@ -112,7 +112,8 @@ const superAdminKeyboard = {
                 { text: '👥 Управление админами' }
             ],
             [
-                { text: '💰 Проверка баланса' }
+                { text: '💰 Проверка баланса' },
+                { text: '📦 Наличие RU shared' }
             ]
         ],
         resize_keyboard: true,
@@ -169,6 +170,32 @@ async function getProxy6Price(count = PURCHASE_DEFAULTS.count, period = PURCHASE
         return { success: false, error: 'Ошибка соединения с PROXY6' };
     }
 }
+
+// Получение доступного количества прокси (по стране и версии)
+// По задаче: RU + IPv4 Shared (version=3)
+async function getProxy6Count(country = 'ru', version = 3) {
+    try {
+        if (!PROXY6_CONFIG.API_KEY) {
+            return { success: false, error: 'API ключ PROXY6 не настроен' };
+        }
+        const url = `${PROXY6_CONFIG.BASE_URL}/${PROXY6_CONFIG.API_KEY}/getcount?country=${country}&version=${version}`;
+        const response = await axios.get(url, { timeout: 10000 });
+        if (response.data.status === 'yes') {
+            return {
+                success: true,
+                count: response.data.count,
+                balance: response.data.balance,
+                currency: response.data.currency
+            };
+        } else {
+            return { success: false, error: response.data.error || 'Ошибка получения количества' };
+        }
+    } catch (error) {
+        log.error('Ошибка при получении доступности PROXY6:', error.message);
+        return { success: false, error: 'Ошибка соединения с PROXY6' };
+    }
+}
+
 
 // Покупка
 async function buyProxy6(count = PURCHASE_DEFAULTS.count, period = PURCHASE_DEFAULTS.period, country = PURCHASE_DEFAULTS.country, version = PURCHASE_DEFAULTS.version, descr = '') {
@@ -726,6 +753,7 @@ bot.on('message', async (msg) => {
     // Проверка баланса (суперадмин)
     if (text === '💰 Проверка баланса' || text === '/proxy6-balance') {
         if (!superAdmin) {
+
             await bot.sendMessage(chatId, '❌ Эта команда доступна только супер-админу');
             return;
         }
@@ -753,6 +781,38 @@ bot.on('message', async (msg) => {
         }
         return;
     }
+
+    // Проверка доступности RU IPv4 Shared (только супер-админ)
+    if (text === '📦 Наличие RU shared' || text === '/proxy6-ru-shared') {
+        if (!superAdmin) {
+            await bot.sendMessage(chatId, '❌ Эта команда доступна только супер-админу');
+            return;
+        }
+        if (!PROXY6_CONFIG.API_KEY) {
+            await bot.sendMessage(chatId, '❌ API ключ PROXY6.net не настроен');
+            return;
+        }
+
+        await bot.sendMessage(chatId, '⏳ Проверяю наличие российских IPv4 Shared прокси на PROXY6...');
+        const result = await getProxy6Count('ru', 3); // RU + IPv4 Shared
+
+        if (result.success) {
+            const perOrder = PURCHASE_DEFAULTS.count || 20;
+            const batches = perOrder > 0 ? Math.floor(result.count / perOrder) : 0;
+            const msgText =
+                `📦 Доступность на PROXY6\n\n` +
+                `🇷🇺 Страна: RU\n` +
+                `🔁 Тип: IPv4 Shared\n` +
+                `✅ Доступно к покупке: ${result.count} шт.\n` +
+                (perOrder > 0 ? `🧮 Заказов по ${perOrder} шт: ${batches}\n` : '') +
+                (result.balance ? `\n💳 Баланс: ${result.balance} ${result.currency || 'RUB'}` : '');
+            await bot.sendMessage(chatId, msgText, getKeyboardForUser(userId));
+        } else {
+            await bot.sendMessage(chatId, `❌ Ошибка: ${result.error}`, getKeyboardForUser(userId));
+        }
+        return;
+    }
+
 
     // Добавить клиента с готовыми прокси
     if (text === '📥 Добавить клиента с прокси' || text === '/addclientwithproxies') {
@@ -785,6 +845,37 @@ bot.on('message', async (msg) => {
 📊 Результаты:
 ✅ Успешно: ${results.success}
 ❌ Ошибок: ${results.failed}`;
+    // Проверка доступности RU IPv4 Shared (только супер-админ)
+    if (text === '📦 Наличие RU shared' || text === '/proxy6-ru-shared') {
+        if (!superAdmin) {
+            await bot.sendMessage(chatId, '❌ Эта команда доступна только супер-админу');
+            return;
+        }
+        if (!PROXY6_CONFIG.API_KEY) {
+            await bot.sendMessage(chatId, '❌ API ключ PROXY6.net не настроен');
+            return;
+        }
+
+        await bot.sendMessage(chatId, '⏳ Проверяю наличие российских IPv4 Shared прокси на PROXY6...');
+        const result = await getProxy6Count('ru', 3); // RU + IPv4 Shared
+
+        if (result.success) {
+            const perOrder = PURCHASE_DEFAULTS.count || 20;
+            const batches = perOrder > 0 ? Math.floor(result.count / perOrder) : 0;
+            const msgText =
+                `📦 Доступность на PROXY6\n\n` +
+                `🇷🇺 Страна: RU\n` +
+                `🔁 Тип: IPv4 Shared\n` +
+                `✅ Доступно к покупке: ${result.count} шт.\n` +
+                (perOrder > 0 ? `🧮 Заказов по ${perOrder} шт: ${batches}\n` : '') +
+                (result.balance ? `\n💳 Баланс: ${result.balance} ${result.currency || 'RUB'}` : '');
+            await bot.sendMessage(chatId, msgText, getKeyboardForUser(userId));
+        } else {
+            await bot.sendMessage(chatId, `❌ Ошибка: ${result.error}`, getKeyboardForUser(userId));
+        }
+        return;
+    }
+
             if (results.errors.length > 0) {
                 message += `\n\n❌ Ошибки:\n${results.errors.slice(0, 5).join('\n')}`;
                 if (results.errors.length > 5) {
@@ -959,7 +1050,7 @@ bot.on('message', async (msg) => {
     const buttonCommands = [
         '👤 Добавить клиента', '🛒 Добавить с покупкой', '🗑️ Удалить клиента', '➕ Добавить прокси',
         '📋 Мои клиенты', '📋 Все клиенты', '🌐 Текущий прокси', '🌍 Мой IP',
-        '👥 Управление админами', '📥 Добавить клиента с прокси', '🔄 Синхронизация', '💰 Проверка баланса',
+        '👥 Управление админами', '📥 Добавить клиента с прокси', '🔄 Синхронизация', '💰 Проверка баланса', '📦 Наличие RU shared',
         '🛍 Купить прокси клиенту'
     ];
     if (buttonCommands.includes(text)) {
@@ -1188,7 +1279,7 @@ bot.on('message', async (msg) => {
    🔐 Пароль: ${password}
    🌐 Прокси: ${proxies.length} шт.
    👨‍💼 Админ: ${userId}
-   
+
 📥 Прокси добавлены без покупки`,
                     getKeyboardForUser(userId)
                 );
